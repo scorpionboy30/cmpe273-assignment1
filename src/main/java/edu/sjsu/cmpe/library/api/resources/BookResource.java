@@ -206,7 +206,7 @@ public class BookResource {
 		statusList.add("checked-out");
 		statusList.add("in-queue");
 		statusList.add("lost");
-		if (!statusList.contains(status)) {
+		if (!statusList.contains(status.toLowerCase())) {
 			return Response
 					.status(422)
 					.type("text/plain")
