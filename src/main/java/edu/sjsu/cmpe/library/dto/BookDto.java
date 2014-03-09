@@ -4,19 +4,24 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 import edu.sjsu.cmpe.library.domain.Book;
 
-@JsonPropertyOrder(alphabetic = true)
+@JsonPropertyOrder({"isbn" , "title" , "publication-date" , "language" , "num-pages" , "status" , "reviews" , "authors" , "links"})
 public class BookDto extends LinksDto {
     private Book book;
 
     /**
      * @param book
      */
-    public BookDto(Book book) {
+    
+    public BookDto() {
 	super();
-	this.book = book;
-    }
+	  }
 
-    /**
+    public BookDto(Book book) {
+		super();
+		this.book = book;
+	}
+
+	/**
      * @return the book
      */
     public Book getBook() {

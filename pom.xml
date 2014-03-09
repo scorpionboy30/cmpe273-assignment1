@@ -30,6 +30,11 @@
 			<artifactId>dropwizard-core</artifactId>
 			<version>${dropwizard.version}</version>
 		</dependency>
+		<dependency>
+				<groupId>org.glassfish</groupId>
+				<artifactId>jsonp-jaxrs</artifactId>
+				<version>1.0</version>
+			</dependency>
 	</dependencies>
 
 	<build>
