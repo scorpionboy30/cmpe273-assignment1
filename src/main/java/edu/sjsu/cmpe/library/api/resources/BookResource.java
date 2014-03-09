@@ -1,5 +1,8 @@
 package edu.sjsu.cmpe.library.api.resources;
 
+import java.math.BigInteger;
+import java.net.URI;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,8 +17,13 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.EntityTag;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriInfo;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.yammer.dropwizard.jersey.params.LongParam;
@@ -38,7 +46,9 @@ import edu.sjsu.cmpe.library.repository.BookRepositoryInterface;
 public class BookResource {
 	/** bookRepository instance */
 	private final BookRepositoryInterface bookRepository;
-
+	
+	
+	EntityTag eTag;
 	/**
 	 * BookResource constructor
 	 * 
@@ -52,8 +62,18 @@ public class BookResource {
 	@GET
 	@Path("/{isbn}")
 	@Timed(name = "view-book")
-	public Response viewBookByISBN(@PathParam("isbn") LongParam isbn) {
+	public Response viewBookByISBN(@PathParam("isbn") LongParam isbn, @Context Request request, @Context UriInfo uri) {
+		
+		this.eTag = computeEntityTag(uri.getRequestUri());
+		if (request.getMethod().equals("GET")) {
+            Response.ResponseBuilder rb = request.evaluatePreconditions(eTag);
+            if (rb != null){
+            	return Response.status(304).entity(rb).build();
+            }
+                //throw new WebApplicationException(rb.build());
+        }
 
+		
 		BookDto bookDto = getBookByIsbn(isbn);
 		bookDto.getBook();
 		bookDto.getLinks();
@@ -136,7 +156,7 @@ public class BookResource {
 			return Response
 					.status(422)
 					.type("text/plain")
-					.entity("Invalid value for Status. Status can only be available/checked-out/in-queue/lost")
+					.entity("Invalid Status. Possible values can be only available/checked-out/in-queue/lost")
 					.build();
 		}
 
@@ -144,7 +164,7 @@ public class BookResource {
 			return Response
 					.status(422)
 					.type("text/plain")
-					.entity("Author Field Empty !!!! Author Name is a required field")
+					.entity("Author deails are mandatory")
 					.build();
 		} else {
 			List<Author> authorList = request.getAuthorList();
@@ -154,7 +174,7 @@ public class BookResource {
 					return Response
 							.status(422)
 							.type("text/plain")
-							.entity("Author Field Empty !!!! Author Name is a required field")
+							.entity("Author deails are mandatory")
 							.build();
 				}
 
@@ -210,7 +230,7 @@ public class BookResource {
 			return Response
 					.status(422)
 					.type("text/plain")
-					.entity("Invalid value for Status. Status can only be available/checked-out/in-queue/lost")
+					.entity("Invalid Status. Possible values can be only available/checked-out/in-queue/lost")
 					.build();
 		}
 
@@ -233,4 +253,20 @@ public class BookResource {
 		return Response.status(200).entity(map).build();
 
 	}
+	
+	private EntityTag computeEntityTag(URI u) {
+        return new EntityTag(
+                computeDigest(u.getRawPath() + u.getRawQuery()));        
+    }
+    
+    private String computeDigest(String content) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA");
+            byte[] digest = md.digest(content.getBytes());
+            BigInteger bi = new BigInteger(digest);
+            return bi.toString(16);
+        } catch (Exception e) {
+            return "";
+        }
+    }    
 }
